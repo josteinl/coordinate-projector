@@ -11,10 +11,15 @@ class Projector:
         return projections
 
     @staticmethod
-    def _get_transformer(from_srid: int, to_srid: int) -> Transformer:
+    def _get_transformer(from_srid: int, to_srid: int, pipeline: str | None) -> Transformer:
         global _transformers
 
-        if transformer := _transformers.get(f"{from_srid}-{to_srid}"):
+        if pipeline:
+            transformer_key = f"{from_srid}-{pipeline}-{to_srid}"
+        else:
+            transformer_key = f"{from_srid}-{to_srid}"
+
+        if transformer := _transformers.get(transformer_key):
             return transformer
 
         from_def_desc: Optional[Dict] = projections.get(str(from_srid))
@@ -29,11 +34,13 @@ class Projector:
 
         transformer = Transformer.from_crs(from_definition, to_definition)
 
-        _transformers[f"{from_srid}-{to_srid}"] = transformer
+        _transformers["transformer_key"] = transformer
 
         return transformer
 
-    def transform(self, from_srid: int, to_srid: int, east: float, north: float) -> tuple[float, float]:
+    def transform(
+        self, from_srid: int, to_srid: int, east: float, north: float, pipeline: str | None
+    ) -> tuple[float, float]:
         transformer: Transformer = self._get_transformer(from_srid, to_srid)
         projected_east, projected_north = transformer.transform(east, north)
         return projected_east, projected_north
